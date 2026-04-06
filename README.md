@@ -1,8 +1,8 @@
-# 📄 AI Answer Sheet Evaluation System
+# 📄 Answer Sheet Evaluation Engine
 
 ## 🧠 Overview
 
-The **AI Answer Sheet Evaluation System** is designed to automate and standardize the evaluation of student answer sheets using artificial intelligence.
+The **Answer Sheet Evaluation Engine** is designed to automate and standardize the evaluation of student answer sheets using artificial intelligence.
 
 This project goes beyond simple grading — it provides:
 
@@ -215,30 +215,6 @@ To build a strong system, you need:
 
 ---
 
-## 📦 Installation
-
-```bash
-git clone https://github.com/your-username/ai-evaluation-system.git
-cd ai-evaluation-system
-pip install -r requirements.txt
-```
-
----
-
-## ▶️ Usage
-
-```bash
-python app.py
-```
-
-Then open:
-
-```
-http://localhost:5000
-```
-
----
-
 ## 📈 Future Improvements
 
 * Fine-tuned evaluation models
@@ -246,16 +222,6 @@ http://localhost:5000
 * Multi-language support
 * Real-time evaluation dashboard
 * Integration with university systems
-
----
-
-## 🤝 Contribution
-
-Contributions are welcome!
-
-* Fork the repo
-* Create a feature branch
-* Submit a pull request
 
 ---
 
