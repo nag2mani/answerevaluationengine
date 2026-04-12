@@ -1,236 +1,160 @@
-# 📄 Answer Sheet Evaluation Engine
+# 📄 Answer Evaluation Engine
 
-## 🧠 Overview
-
-The **Answer Sheet Evaluation Engine** is designed to automate and standardize the evaluation of student answer sheets using artificial intelligence.
-
-This project goes beyond simple grading — it provides:
-
-* ⚡ Faster evaluation
-* 🎯 Consistent scoring
-* 📊 Scalable assessment for large batches
-* 🧾 Detailed feedback for students
+An AI-powered system for evaluating handwritten student answer sheets using OCR and semantic similarity scoring.
 
 ---
 
-## 🚨 Problem Statement
+## 🚀 Quick Start
 
-Traditional answer sheet evaluation suffers from:
+### Prerequisites
+- **Python 3.8+**
+- **Tesseract OCR** (for handwritten text extraction)
+  - macOS: `brew install tesseract`
+  - Ubuntu: `sudo apt install tesseract-ocr`
 
-* ⏳ **Time Inefficiency**
-  Professors spend hours manually checking papers
+### Setup & Usage
 
-* 🎯 **Inconsistency**
-  Different evaluators assign different marks
+```bash
+# 1. First-time setup (only once)
+./setup.sh
 
-* 📉 **Scalability Issues**
-  Difficult to handle large numbers of students
+# 2. Start the platform
+./run start
 
-* 🧾 **Lack of Feedback**
-  Students receive marks but not meaningful insights
-
----
-
-## 💡 Solution
-
-This system uses **AI + NLP + OCR** to:
-
-* Extract text from answer sheets
-* Understand student responses
-* Compare with model answers
-* Assign marks intelligently
-* Generate human-like feedback
-
----
-
-## 🧩 Approaches
-
-### 🟢 1. Rule-Based + Similarity Scoring (MVP)
-
-**How it works:**
-
-* Convert answers to text (OCR)
-* Compare with model answers
-* Use semantic similarity & keyword matching
-* Generate score
-
-**Tech Used:**
-
-* OCR: Tesseract / Google Vision API
-* Embeddings: Sentence Transformers / OpenAI
-* Scoring: Cosine similarity + heuristics
-
-**Pros:**
-
-* Fast to build
-* Low cost
-
-**Cons:**
-
-* Weak for subjective answers
-
----
-
-### 🔵 2. LLM-Based Evaluation (Recommended)
-
-**How it works:**
-
-* Input:
-
-  * Question
-  * Model answer
-  * Sample evaluated answers
-  * Student answer
-* LLM evaluates like a human examiner
-
-**Example Prompt:**
-
-```
-You are a strict university evaluator.
-Evaluate the answer out of 10 based on:
-- Concept clarity
-- Completeness
-- Structure
-Provide marks and reasoning.
+# 3. Open in browser
+# → http://localhost:8000
 ```
 
-**Pros:**
+### Available Commands
 
-* Handles subjective answers
-* Generates feedback
-* Quick to implement
-
-**Cons:**
-
-* Requires prompt tuning
-* API cost involved
-
----
-
-### 🔴 3. Fine-Tuned Model (Future Scope)
-
-Train a custom model using:
-
-* Previously evaluated answer sheets
-* Marking patterns
-
-**Pros:**
-
-* Unique intellectual property
-* High accuracy over time
-
-**Cons:**
-
-* Requires large dataset
-* Expensive to train
-
----
-
-### 🟡 4. Hybrid System (Final Vision)
-
-Combine:
-
-* OCR
-* LLM evaluation
-* Rule-based scoring
-* Confidence scoring
-
-👉 This represents the **ideal production system**
-
----
-
-## 🏗️ System Architecture
-
+```bash
+./run start      # Start the server
+./run stop       # Stop the server
+./run restart    # Restart the server
+./run status     # Check server status
+./run logs       # View server logs
+./run help       # Show help information
 ```
-Input Layer
-   ↓
-Upload Answer Sheets (PDF/Image)
 
-Processing Layer
-   ↓
-OCR → Text Extraction
-Question Segmentation
-Text Cleaning
+---
 
-Evaluation Engine
-   ↓
-LLM + Scoring Logic
+## 📋 Project Structure
 
-Output Layer
-   ↓
-Marks per Question
-Feedback
-Final Score
-Confidence Level
-```
+This project has been **simplified to 2 main executable files**:
+
+### Core Files
+- **`setup.sh`** - One-time setup script (installs dependencies, creates virtual environment)
+- **`run`** - Main CLI command for managing the platform
+- **`requirements.txt`** - Python dependencies
+- **`main.py`** - FastAPI backend application
+- **`README.md`** - This documentation
+
+### Supporting Directories
+- **`src/`** - Core Python modules:
+  - `ocr_processor.py` - Handwritten text extraction with preprocessing
+  - `evaluation_engine.py` - Rule-based + semantic similarity scoring
+  - `models.py` - Data models and Pydantic schemas
+  - `pdf_processor.py` - PDF handling with fallback mechanisms
+- **`templates/`** - HTML templates (modern dark UI)
+- **`static/`** - Static assets
+- **`uploads/`** - Temporary storage for uploaded files
+- **`venv/`** - Python virtual environment
+
+---
+
+## 🧠 How It Works (MVP)
+
+**Rule-based + Similarity Scoring Approach:**
+
+1. **Upload Phase**
+   - Supports: PDF, PNG, JPG, JPEG, DOCX
+   - Drag & drop interface
+
+2. **OCR Processing**
+   - Uses **Tesseract OCR** optimized for handwritten text
+   - Image preprocessing (contrast enhancement, noise removal, adaptive thresholding)
+   - Multi-page PDF support with question segmentation
+   - Confidence scoring for OCR quality
+
+3. **Evaluation Engine**
+   - **Semantic Similarity**: SentenceTransformers (`all-MiniLM-L6-v2`) embeddings + cosine similarity
+   - **Keyword Matching**: Academic domain-specific keywords
+   - **Structure Analysis**: Bullet points, numbered lists, length comparison
+   - **Weighted Scoring**: 50% semantic + 25% keywords + 15% structure + 10% length
+
+4. **Output**
+   - Score (out of max marks)
+   - Confidence percentage with visual meter
+   - Human-like feedback with specific suggestions
+   - Keyword highlights showing matches
+   - Detailed similarity breakdown
+
+---
+
+## ✨ Features
+
+### User Features
+- **Modern Dark UI** with Tailwind CSS and smooth animations
+- **Smart File Upload** with drag & drop support
+- **Real-time OCR** with visible extracted text
+- **Interactive Scoring** with confidence visualization
+- **Detailed Feedback** with improvement suggestions
+- **Keyword Analysis** showing what matched the model answer
+- **Scoring Breakdown** showing how marks were calculated
+
+### Technical Features
+- **Hybrid Scoring**: Combines semantic embeddings with rule-based heuristics
+- **Robust OCR**: Multiple fallback mechanisms for different document types
+- **Background Server**: Runs independently with simple CLI management
+- **Clean Architecture**: Well-organized Python modules
+- **Production Ready**: Proper error handling and logging
+
+---
+
+## 📊 Supported Formats
+
+- **PDF** - Scanned answer sheets (multi-page supported)
+- **Images** - PNG, JPG, JPEG (handwritten preferred)
+- **Documents** - DOCX (digital text)
+
+**Best Results**: Clear, well-lit scanned copies with legible handwriting.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Backend
-
-* Flask / FastAPI
-
-### Frontend
-
-* React (or simple dashboard UI)
-
-### Database
-
-* PostgreSQL / Supabase
-
-### AI Layer
-
-* OpenAI API / Gemini API
-* HuggingFace (future)
-
-### OCR
-
-* Google Vision API (recommended)
-* Tesseract (budget option)
-
----
-
-## 📊 Data Requirements
-
-To build a strong system, you need:
-
-* 📄 Question papers
-* 🧾 Model answers
-* ✅ Evaluated answer sheets (**most important**)
-
-> ⚠️ Data is your biggest competitive advantage — more than code.
-
----
-
-## 🚀 Features
-
-* 📥 Upload scanned answer sheets
-* 🔍 Automatic text extraction (OCR)
-* 🧠 AI-based answer evaluation
-* 🧾 Detailed feedback generation
-* 📊 Marks breakdown per question
-* 📈 Confidence scoring
+- **Backend**: FastAPI (high performance)
+- **OCR**: Tesseract with OpenCV preprocessing
+- **AI/ML**: SentenceTransformers, scikit-learn, NumPy
+- **Frontend**: HTML + Tailwind CSS + vanilla JavaScript
+- **Document Processing**: PyPDF2, python-docx, pdf2image
+- **Deployment**: Simple background server with CLI interface
 
 ---
 
 ## 📈 Future Improvements
 
-* Fine-tuned evaluation models
-* Handwriting recognition optimization
-* Multi-language support
-* Real-time evaluation dashboard
-* Integration with university systems
+- LLM-based evaluation (beyond rule-based)
+- Fine-tuned models for specific subjects
+- Multi-language support
+- Database integration for storing results
+- Batch processing dashboard
+- API authentication and user management
 
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
 
 ---
 
 ## 🌟 Vision
 
-To build a **scalable AI evaluation engine** that becomes the standard for academic assessment worldwide.
+To build a **scalable AI evaluation engine** that becomes the standard for academic assessment worldwide, combining the accuracy of human evaluators with the speed and consistency of AI.
+
+---
+
+**Made with ❤️ for educators and students**
+
+**Current Version**: Rule-based + Similarity Scoring (MVP)

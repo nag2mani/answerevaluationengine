@@ -1,0 +1,180 @@
+#!/bin/bash
+# ================================================
+# Answer Evaluation Engine - CLI
+# Usage: ./run [start|stop|restart|status|logs]
+# ================================================
+
+PORT=8000
+PID_FILE=".run.pid"
+LOG_FILE="server.log"
+APP_NAME="Answer Evaluation Engine"
+
+function print_header() {
+    echo "========================================"
+    echo "  $APP_NAME"
+    echo "========================================"
+}
+
+function show_status() {
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "✅ Server is RUNNING (PID: $PID)"
+            echo "🌐 URL: http://localhost:$PORT"
+            echo "📊 Health: http://localhost:$PORT/health"
+            return 0
+        else
+            echo "⚠️  PID file exists but process is dead"
+            rm -f "$PID_FILE"
+        fi
+    fi
+    echo "⏹️  Server is STOPPED"
+    return 1
+}
+
+function start_server() {
+    print_header
+    if show_status > /dev/null; then
+        echo "❌ Server is already running. Use './run restart' instead."
+        return 1
+    fi
+
+    echo "🚀 Starting $APP_NAME..."
+    echo "📝 Activating virtual environment..."
+    
+    if [ ! -d "venv" ]; then
+        echo "❌ Virtual environment not found. Please run ./setup.sh first."
+        return 1
+    fi
+
+    source venv/bin/activate
+
+    echo "📋 Starting FastAPI server on port $PORT..."
+    echo "📝 Logs will be saved to $LOG_FILE"
+    
+    # Start server in background
+    nohup uvicorn main:app --host 0.0.0.0 --port $PORT > "$LOG_FILE" 2>&1 &
+    PID=$!
+    
+    echo $PID > "$PID_FILE"
+    sleep 3
+    
+    if ps -p $PID > /dev/null 2>&1; then
+        echo "✅ $APP_NAME started successfully! (PID: $PID)"
+        echo "🌐 Open browser → http://localhost:$PORT"
+        echo ""
+        echo "📋 Available commands:"
+        echo "   ./run status   → Check status"
+        echo "   ./run stop     → Stop server"
+        echo "   ./run restart  → Restart server"
+        echo "   ./run logs     → View logs"
+    else
+        echo "❌ Failed to start server. Check $LOG_FILE"
+    fi
+}
+
+function stop_server() {
+    print_header
+    echo "⏹️  Stopping $APP_NAME..."
+    
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "🛑 Stopping process $PID..."
+            kill $PID 2>/dev/null
+            sleep 2
+            if ps -p $PID > /dev/null 2>&1; then
+                kill -9 $PID 2>/dev/null
+            fi
+            echo "✅ Server stopped successfully."
+        else
+            echo "⚠️  Process not running. Cleaning up..."
+        fi
+        rm -f "$PID_FILE"
+    else
+        # Look for any uvicorn processes
+        PIDS=$(pgrep -f "uvicorn main:app" || true)
+        if [ ! -z "$PIDS" ]; then
+            echo "🛑 Found running server. Stopping..."
+            kill $PIDS 2>/dev/null || true
+            echo "✅ Server stopped."
+        else
+            echo "⏹️  No running server found."
+        fi
+    fi
+}
+
+function restart_server() {
+    print_header
+    echo "🔄 Restarting $APP_NAME..."
+    stop_server
+    sleep 3
+    start_server
+}
+
+function show_logs() {
+    print_header
+    if [ -f "$LOG_FILE" ]; then
+        echo "📋 Recent logs from $LOG_FILE:"
+        echo "----------------------------------------"
+        tail -25 "$LOG_FILE"
+        echo "----------------------------------------"
+        echo "📄 Full log: $LOG_FILE"
+    else
+        echo "📭 No logs available yet. Start the server first."
+    fi
+}
+
+function show_help() {
+    print_header
+    echo "Usage: ./answer-eval [COMMAND]"
+    echo ""
+    echo "Commands:"
+    echo "  start     Start the server"
+    echo "  stop      Stop the server"
+    echo "  restart   Restart the server"
+    echo "  status    Check server status"
+    echo "  logs      View recent logs"
+    echo "  help      Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  ./answer-eval start"
+    echo "  ./answer-eval status"
+    echo "  ./answer-eval logs"
+    echo ""
+    echo "First time setup: ./setup.sh"
+    echo "UI URL: http://localhost:8000"
+}
+
+# Main logic
+case "$1" in
+    start)
+        start_server
+        ;;
+    stop)
+        stop_server
+        ;;
+    restart)
+        restart_server
+        ;;
+    status)
+        show_status
+        ;;
+    logs)
+        show_logs
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        if [ -z "$1" ]; then
+            show_status
+            echo ""
+            echo "Type './answer-eval help' for usage information."
+        else
+            echo "❌ Unknown command: $1"
+            echo "Type './answer-eval help' for available commands."
+            exit 1
+        fi
+        ;;
+esac

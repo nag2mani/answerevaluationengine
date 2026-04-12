@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnswerEval • AI Answer Sheet Evaluator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: 234 179 8;
+        }
+        
+        .tail-container {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .logo-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .upload-zone {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .upload-zone:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .result-card {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-circle {
+            background: conic-gradient(
+                rgb(234 179 8) 0deg 270deg,
+                #e5e7eb 270deg 360deg
+            );
+        }
+
+        .ocr-text {
+            font-family: ui-monospace, monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body class="tail-container bg-zinc-950 text-zinc-200">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="border-b border-zinc-800 bg-zinc-950 sticky top-0 z-50">
+            <div class="px-8 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-9 h-9 bg-yellow-500 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-graduation-cap text-zinc-950 text-2xl"></i>
+                    </div>
+                    <div>
+                        <span class="logo-font text-3xl font-semibold tracking-tighter text-white">AnswerEval</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-x-8 text-sm">
+                    <a href="#" onclick="showTab(0)" class="tab-link flex items-center gap-x-2 text-yellow-400 font-medium border-b-2 border-yellow-400 pb-1" id="tab-0">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>Upload &amp; Evaluate</span>
+                    </a>
+                    <a href="#" onclick="showTab(1)" class="tab-link flex items-center gap-x-2 text-zinc-400 hover:text-zinc-200 transition-colors" id="tab-1">
+                        <i class="fa-solid fa-chart-bar"></i>
+                        <span>Batch Processing</span>
+                    </a>
+                    <a href="#" onclick="showTab(2)" class="tab-link flex items-center gap-x-2 text-zinc-400 hover:text-zinc-200 transition-colors" id="tab-2">
+                        <i class="fa-solid fa-book"></i>
+                        <span>Model Answers</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-x-4">
+                    <div class="flex items-center gap-x-2 bg-zinc-900 text-xs px-3 py-1.5 rounded-3xl border border-zinc-700">
+                        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                        <span class="text-emerald-400 font-medium">OCR Ready</span>
+                    </div>
+                    <button onclick="showHelp()" 
+                            class="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-2xl transition-colors">
+                        <i class="fa-solid fa-circle-question"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Main Content -->
+            <div class="flex-1 p-8">
+                <!-- Tab 1: Single Upload -->
+                <div id="tab-content-0">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="mb-8">
+                            <h1 class="text-5xl font-semibold tracking-tighter text-white mb-3">Evaluate Answer Sheets</h1>
+                            <p class="text-zinc-400 text-lg">Upload scanned handwritten answers, PDFs, or documents. Get instant AI evaluation with detailed feedback.</p>
+                        </div>
+
+                        <!-- Upload Area -->
+                        <div id="upload-area" 
+                             onclick="document.getElementById('file-input').click()"
+                             class="upload-zone border-2 border-dashed border-zinc-700 hover:border-yellow-500 bg-zinc-900 rounded-3xl p-12 text-center cursor-pointer mb-8">
+                            <input type="file" id="file-input" class="hidden" 
+                                   accept=".pdf,.png,.jpg,.jpeg,.docx" 
+                                   onchange="handleFileSelect(event)">
+                            
+                            <div class="mx-auto w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6">
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-yellow-400"></i>
+                            </div>
+                            
+                            <h3 class="text-xl font-medium text-white mb-2">Drop your answer sheet here</h3>
+                            <p class="text-zinc-400 mb-6">or click to browse • Supports PDF, JPG, PNG, DOCX</p>
+                            
+                            <div class="inline-flex items-center gap-x-5 text-xs text-zinc-500">
+                                <div class="flex items-center gap-x-1.5">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                    <span>PDF</span>
+                                </div>
+                                <div class="flex items-center gap-x-1.5">
+                                    <i class="fa-solid fa-image"></i>
+                                    <span>Images</span>
+                                </div>
+                                <div class="flex items-center gap-x-1.5">
+                                    <i class="fa-solid fa-file-word"></i>
+                                    <span>DOCX</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Info -->
+                        <div id="file-info" class="hidden bg-zinc-900 border border-zinc-700 rounded-3xl p-6 mb-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-x-4">
+                                    <div id="file-icon" class="w-10 h-10 bg-zinc-800 rounded-2xl flex items-center justify-center text-2xl"></div>
+                                    <div>
+                                        <div id="file-name" class="font-medium text-white"></div>
+                                        <div id="file-meta" class="text-xs text-zinc-500"></div>
+                                    </div>
+                                </div>
+                                <button onclick="clearFile()" 
+                                        class="text-red-400 hover:text-red-500 text-sm flex items-center gap-x-2">
+                                    <i class="fa-solid fa-xmark"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Model Answer Input -->
+                        <div class="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mb-8">
+                            <div class="flex items-center gap-x-3 mb-6">
+                                <i class="fa-solid fa-book text-yellow-400"></i>
+                                <h3 class="font-semibold text-lg">Model Answer (Reference)</h3>
+                            </div>
+                            
+                            <textarea id="model-answer" rows="4"
+                                class="w-full bg-zinc-950 border border-zinc-700 focus:border-yellow-400 rounded-2xl p-5 text-sm resize-y min-h-[120px] font-light placeholder-zinc-500"
+                                placeholder="Paste the official model answer or key points here..."></textarea>
+                            
+                            <div class="grid grid-cols-2 gap-4 mt-6">
+                                <div>
+                                    <label class="block text-xs text-zinc-400 mb-2 font-medium">QUESTION</label>
+                                    <input id="question-text" type="text" 
+                                           class="w-full bg-zinc-950 border border-zinc-700 focus:border-yellow-400 rounded-2xl px-5 py-4 text-sm"
+                                           placeholder="What is photosynthesis? Explain the process." value="Explain the process of photosynthesis in plants.">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-zinc-400 mb-2 font-medium">MAX MARKS</label>
+                                    <div class="flex items-center gap-x-3">
+                                        <input id="max-marks" type="number" value="10"
+                                            class="w-24 bg-zinc-950 border border-zinc-700 focus:border-yellow-400 rounded-2xl px-5 py-4 text-center text-lg font-semibold">
+                                        <div onclick="suggestModelAnswer()" 
+                                             class="cursor-pointer text-xs px-5 py-4 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-2xl flex items-center gap-x-2 text-yellow-300">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                            <span class="font-medium">Auto-suggest</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="evaluateAnswer()" 
+                                id="evaluate-btn"
+                                class="w-full h-14 bg-yellow-500 hover:bg-yellow-400 transition-all text-zinc-950 font-semibold text-lg rounded-3xl flex items-center justify-center gap-x-3 disabled:opacity-50"
+                                disabled>
+                            <i class="fa-solid fa-brain"></i>
+                            <span>EXTRACT TEXT &amp; EVALUATE</span>
+                        </button>
+
+                        <p class="text-center text-xs text-zinc-500 mt-6">Powered by Tesseract OCR + Sentence Transformers</p>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Batch Processing -->
+                <div id="tab-content-1" class="hidden">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-4xl font-semibold tracking-tight mb-2">Batch Evaluation</h2>
+                        <p class="text-zinc-400 mb-8">Upload multiple answer sheets and evaluate them together</p>
+                        
+                        <div onclick="document.getElementById('batch-input').click()" 
+                             class="border border-dashed border-zinc-700 hover:border-yellow-400 bg-zinc-900/50 rounded-3xl p-16 text-center cursor-pointer">
+                            <input type="file" id="batch-input" class="hidden" multiple 
+                                   accept=".pdf,.png,.jpg,.jpeg" onchange="handleBatchSelect(event)">
+                            <i class="fa-solid fa-layer-group text-6xl text-zinc-600 mb-6"></i>
+                            <p class="text-xl text-zinc-300">Drop multiple files here</p>
+                            <p class="text-sm text-zinc-500 mt-1">PDFs, scanned images (max 20 at once)</p>
+                        </div>
+                        
+                        <div id="batch-files-list" class="mt-8 hidden">
+                            <div class="text-xs uppercase tracking-widest text-zinc-500 mb-4">Selected Files</div>
+                            <div id="batch-file-items" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Saved Model Answers -->
+                <div id="tab-content-2" class="hidden max-w-2xl mx-auto">
+                    <h2 class="text-4xl font-semibold tracking-tight mb-8">Saved Model Answers</h2>
+                    
+                    <div class="space-y-6">
+                        <div onclick="loadSample(0)" class="bg-zinc-900 border border-zinc-700 hover:border-yellow-400 p-6 rounded-3xl cursor-pointer transition-all group">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-emerald-400 text-xs font-mono mb-1">BIOLOGY • Q2</div>
+                                    <div class="text-lg font-medium group-hover:text-yellow-300">Explain the process of photosynthesis</div>
+                                </div>
+                                <div class="text-4xl font-light text-zinc-700 group-hover:text-yellow-400">10</div>
+                            </div>
+                            <div class="mt-6 text-xs text-zinc-400 line-clamp-2">
+                                Photosynthesis is the process by which green plants use sunlight to synthesize foods from carbon dioxide and water...
+                            </div>
+                        </div>
+                        
+                        <div onclick="loadSample(1)" class="bg-zinc-900 border border-zinc-700 hover:border-yellow-400 p-6 rounded-3xl cursor-pointer transition-all group">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-blue-400 text-xs font-mono mb-1">COMPUTER SCIENCE • Q4</div>
+                                    <div class="text-lg font-medium group-hover:text-yellow-300">What is dynamic programming? Give examples.</div>
+                                </div>
+                                <div class="text-4xl font-light text-zinc-700 group-hover:text-yellow-400">15</div>
+                            </div>
+                            <div class="mt-6 text-xs text-zinc-400 line-clamp-2">
+                                Dynamic programming is both a mathematical optimization method and a computer programming method...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Sidebar -->
+            <div class="w-96 bg-zinc-900 border-l border-zinc-800 min-h-screen p-6 overflow-auto" id="results-panel">
+                <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center py-12">
+                    <div class="w-16 h-16 rounded-3xl bg-zinc-800 flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-file-lines text-4xl text-zinc-600"></i>
+                    </div>
+                    <h4 class="font-medium text-zinc-300 mb-2">No evaluation yet</h4>
+                    <p class="text-xs max-w-[180px] text-zinc-500">Upload a scanned answer sheet or handwritten document to get started</p>
+                </div>
+
+                <!-- Results will be injected here -->
+                <div id="results-content" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-zinc-800 border border-yellow-400 text-yellow-300 text-sm px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-x-3">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="toast-text"></span>
+    </div>
+
+    <script>
+        let currentFile = null;
+        let currentExtractedText = "";
+        
+        function showTab(tabIndex) {
+            // Hide all tab contents
+            for (let i = 0; i < 3; i++) {
+                const content = document.getElementById(`tab-content-${i}`);
+                const link = document.getElementById(`tab-${i}`);
+                if (content && link) {
+                    content.classList.toggle('hidden', i !== tabIndex);
+                    link.classList.toggle('text-yellow-400', i === tabIndex);
+                    link.classList.toggle('border-b-2', i === tabIndex);
+                    link.classList.toggle('border-yellow-400', i === tabIndex);
+                    link.classList.toggle('text-zinc-400', i !== tabIndex);
+                }
+            }
+        }
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            currentFile = file;
+            displayFileInfo(file);
+            document.getElementById('evaluate-btn').disabled = false;
+        }
+        
+        function displayFileInfo(file) {
+            const fileInfo = document.getElementById('file-info');
+            fileInfo.classList.remove('hidden');
+            
+            document.getElementById('file-name').textContent = file.name;
+            
+            const size = (file.size / 1024).toFixed(1);
+            document.getElementById('file-meta').innerHTML = `
+                ${file.type || 'Unknown type'} • ${size} KB
+            `;
+            
+            const iconContainer = document.getElementById('file-icon');
+            let icon = '📄';
+            
+            if (file.name.toLowerCase().endsWith('.pdf')) icon = '📕';
+            else if (['.png','.jpg','.jpeg'].some(ext => file.name.toLowerCase().endsWith(ext))) icon = '🖼️';
+            else if (file.name.toLowerCase().endsWith('.docx')) icon = '📘';
+            
+            iconContainer.innerHTML = `<span class="text-4xl">${icon}</span>`;
+        }
+        
+        function clearFile() {
+            currentFile = null;
+            document.getElementById('file-info').classList.add('hidden');
+            document.getElementById('file-input').value = '';
+            document.getElementById('evaluate-btn').disabled = true;
+        }
+        
+        async function evaluateAnswer() {
+            const btn = document.getElementById('evaluate-btn');
+            const originalText = btn.innerHTML;
+            
+            if (!currentFile) {
+                showToast("Please upload an answer sheet first", true);
+                return;
+            }
+            
+            const modelAnswer = document.getElementById('model-answer').value.trim();
+            if (!modelAnswer) {
+                showToast("Please provide a model answer for comparison", true);
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-zinc-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            `;
+            showToast("Extracting handwritten text using OCR...");
+            
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            
+            try {
+                // Step 1: Extract text
+                const extractRes = await fetch('/api/extract-text', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!extractRes.ok) throw new Error("OCR extraction failed");
+                
+                const extracted = await extractRes.json();
+                currentExtractedText = extracted.cleaned_text || extracted.full_text;
+                
+                showToast("Text extracted. Running AI evaluation...");
+                
+                // Step 2: Evaluate
+                const evaluatePayload = {
+                    student_answer: currentExtractedText,
+                    model_answer: modelAnswer,
+                    question: document.getElementById('question-text').value,
+                    max_marks: parseInt(document.getElementById('max-marks').value) || 10
+                };
+                
+                const evalRes = await fetch('/api/evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(evaluatePayload)
+                });
+                
+                if (!evalRes.ok) throw new Error("Evaluation failed");
+                
+                const result = await evalRes.json();
+                renderEvaluationResult(result, extracted);
+                
+            } catch (err) {
+                console.error(err);
+                showToast("Sorry, something went wrong. " + err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+        
+        function renderEvaluationResult(result, extractedData) {
+            const container = document.getElementById('results-content');
+            const empty = document.getElementById('empty-state');
+            
+            empty.classList.add('hidden');
+            container.classList.remove('hidden');
+            container.innerHTML = `
+                <div class="result-card bg-zinc-950 border border-yellow-400/30 rounded-3xl overflow-hidden">
+                    <!-- Score Header -->
+                    <div class="p-8 border-b border-zinc-800 flex items-center justify-between">
+                        <div>
+                            <div class="uppercase text-[10px] tracking-[1px] font-mono text-yellow-400 mb-1">FINAL SCORE</div>
+                            <div class="flex items-baseline">
+                                <span class="text-7xl font-semibold text-white tracking-tighter">${result.score}</span>
+                                <span class="text-4xl text-zinc-500 font-light ml-3">/${result.max_marks}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="relative w-28 h-28">
+                            <div class="progress-circle w-28 h-28 rounded-full flex items-center justify-center" 
+                                 style="background: conic-gradient(rgb(234 179 8) 0deg ${result.confidence * 360}deg, #27272a ${result.confidence * 360}deg 360deg)">
+                                <div class="w-20 h-20 bg-zinc-950 rounded-full flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div class="text-4xl font-semibold text-yellow-300">${Math.round(result.confidence * 100)}</div>
+                                        <div class="text-[10px] text-zinc-500 -mt-1">CONFIDENCE</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Extracted Text -->
+                    <div class="p-8 border-b border-zinc-800">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="uppercase text-xs font-medium tracking-widest text-zinc-400">EXTRACTED HANDWRITTEN TEXT</div>
+                            <div onclick="copyToClipboard('${currentExtractedText.replace(/'/g, "\\'")}')" 
+                                 class="text-yellow-400 hover:text-yellow-300 cursor-pointer text-xs flex items-center gap-x-1">
+                                <i class="fa-solid fa-copy"></i>
+                                <span>COPY</span>
+                            </div>
+                        </div>
+                        <div class="ocr-text bg-black/60 p-6 rounded-2xl border border-zinc-800 text-amber-100 max-h-52 overflow-auto leading-relaxed">
+                            ${currentExtractedText || extractedData.full_text || "No text extracted"}
+                        </div>
+                    </div>
+                    
+                    <!-- Feedback -->
+                    <div class="p-8">
+                        <div class="uppercase text-xs font-medium tracking-widest text-zinc-400 mb-4">AI FEEDBACK</div>
+                        <div class="text-zinc-200 leading-relaxed text-[15px]">
+                            ${result.feedback}
+                        </div>
+                        
+                        <!-- Keywords -->
+                        ${result.keywords_matched && result.keywords_matched.length ? `
+                        <div class="mt-8">
+                            <div class="uppercase text-xs font-medium tracking-widest text-zinc-400 mb-3">KEYWORDS MATCHED</div>
+                            <div class="flex flex-wrap gap-2">
+                                ${result.keywords_matched.map(kw => `
+                                    <span onclick="highlightKeyword(this)" 
+                                          class="inline-block text-xs bg-zinc-900 hover:bg-yellow-900 border border-yellow-900 text-yellow-300 px-4 py-2 rounded-3xl cursor-pointer transition-colors">
+                                        ${kw}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>` : ''}
+                        
+                        <!-- Breakdown -->
+                        <div class="mt-10 pt-8 border-t border-zinc-800">
+                            <div class="uppercase text-xs font-medium tracking-widest text-zinc-400 mb-4">SCORING BREAKDOWN</div>
+                            <div class="space-y-6">
+                                ${Object.entries(result.similarity_breakdown || {}).map(([key, value]) => `
+                                <div class="flex items-center gap-x-4">
+                                    <div class="flex-1">
+                                        <div class="text-xs text-zinc-400">${key.replace('_', ' ').toUpperCase()}</div>
+                                        <div class="h-2 bg-zinc-800 rounded-3xl overflow-hidden">
+                                            <div class="h-2 bg-yellow-400 transition-all" 
+                                                 style="width: ${Math.round(value * 100)}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="font-mono text-sm w-12 text-right text-yellow-400">${Math.round(value * 100)}%</div>
+                                </div>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="resetUI()" 
+                        class="mt-8 w-full py-6 text-xs border border-zinc-700 hover:bg-zinc-800 transition-colors rounded-3xl text-zinc-400 flex items-center justify-center gap-x-2">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>EVALUATE ANOTHER ANSWER SHEET</span>
+                </button>
+            `;
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Copied extracted text to clipboard");
+            });
+        }
+        
+        function highlightKeyword(el) {
+            el.style.backgroundColor = '#422006';
+            setTimeout(() => {
+                el.style.backgroundColor = '';
+            }, 800);
+        }
+        
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const text = document.getElementById('toast-text');
+            
+            text.textContent = message;
+            toast.classList.remove('hidden');
+            
+            if (isError) {
+                toast.style.borderColor = '#f87171';
+                toast.style.color = '#fca5a5';
+            } else {
+                toast.style.borderColor = '#fde047';
+                toast.style.color = '#fde047';
+            }
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('opacity-0');
+                }, 400);
+            }, 4000);
+        }
+        
+        function suggestModelAnswer() {
+            const suggestions = [
+                "Photosynthesis is the process used by plants to convert light energy into chemical energy. It occurs in chloroplasts where chlorophyll captures sunlight. The overall reaction is 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂. It consists of light-dependent and light-independent reactions.",
+                "Dynamic Programming is an optimization technique that solves complex problems by breaking them down into simpler subproblems. It stores the results of subproblems to avoid redundant computations. Classic examples include Fibonacci sequence, knapsack problem, and shortest path algorithms.",
+                "The water cycle describes how water evaporates from oceans, condenses into clouds, precipitates as rain, and returns to water bodies. Key processes include evaporation, condensation, precipitation, infiltration, and runoff."
+            ];
+            
+            const random = suggestions[Math.floor(Math.random() * suggestions.length)];
+            document.getElementById('model-answer').value = random;
+            showToast("Model answer loaded");
+        }
+        
+        function loadSample(n) {
+            showTab(0);
+            const questions = [
+                "Explain the process of photosynthesis in plants.",
+                "What is dynamic programming? Explain with examples.",
+                "Describe the stages of the water cycle."
+            ];
+            const models = [
+                "Photosynthesis is the process used by plants to convert light energy into chemical energy...",
+                "Dynamic Programming is an optimization technique that solves complex problems by breaking them down into simpler subproblems...",
+                "The water cycle describes how water evaporates from oceans, condenses into clouds..."
+            ];
+            
+            document.getElementById('question-text').value = questions[n];
+            document.getElementById('model-answer').value = models[n];
+            showToast("Sample loaded. Upload an answer sheet to evaluate.");
+        }
+        
+        function resetUI() {
+            document.getElementById('results-content').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+            clearFile();
+            document.getElementById('model-answer').value = '';
+        }
+        
+        function handleBatchSelect(e) {
+            const files = e.target.files;
+            if (!files.length) return;
+            
+            const container = document.getElementById('batch-files-list');
+            const itemsContainer = document.getElementById('batch-file-items');
+            itemsContainer.innerHTML = '';
+            
+            Array.from(files).forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-zinc-900 border border-zinc-700 rounded-2xl px-6 py-4";
+                div.innerHTML = `
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-xl">📄</span>
+                        <div>
+                            <div class="text-sm">${file.name}</div>
+                            <div class="text-xs text-zinc-500">${(file.size/1024).toFixed(1)} KB</div>
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.remove()" 
+                            class="text-xs px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/70 rounded-2xl">Remove</button>
+                `;
+                itemsContainer.appendChild(div);
+            });
+            
+            container.classList.remove('hidden');
+            showToast(`${files.length} files ready for batch evaluation`);
+        }
+        
+        function showHelp() {
+            showToast("Handwritten OCR powered by Tesseract. Semantic scoring uses SentenceTransformers. Try uploading clear scanned copies for best results.");
+        }
+        
+        // Initialize Tailwind and keyboard shortcuts
+        function initialize() {
+            // Tailwind script already loaded via CDN
+            console.log('%cAnswerEval AI Evaluation Engine initialized successfully ✅', 'color:#fde047; font-family:monospace');
+            
+            // Keyboard shortcut hint
+            document.addEventListener('keydown', function(e) {
+                if (e.metaKey && e.key === "k") {
+                    e.preventDefault();
+                    const uploadArea = document.getElementById('upload-area');
+                    if (uploadArea) uploadArea.click();
+                }
+            });
+            
+            // Make upload area nicer on drag over
+            const uploadZone = document.getElementById('upload-area');
+            if (uploadZone) {
+                uploadZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadZone.style.borderColor = '#fde047';
+                    uploadZone.style.backgroundColor = '#18181b';
+                });
+                
+                uploadZone.addEventListener('dragleave', () => {
+                    uploadZone.style.borderColor = '';
+                    uploadZone.style.backgroundColor = '';
+                });
+                
+                uploadZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadZone.style.borderColor = '';
+                    uploadZone.style.backgroundColor = '';
+                    
+                    if (e.dataTransfer.files.length > 0) {
+                        const fakeEvent = { target: { files: [e.dataTransfer.files[0]] } };
+                        handleFileSelect(fakeEvent);
+                    }
+                });
+            }
+            
+            // Demo: Load a sample after 1600ms
+            setTimeout(() => {
+                if (!currentFile) {
+                    // Only show if user hasn't started
+                    const toast = document.getElementById('toast');
+                    if (toast.classList.contains('hidden')) {
+                        showToast("💡 Tip: ⌘K quickly opens the upload dialog");
+                    }
+                }
+            }, 1800);
+        }
+        
+        window.onload = initialize;
+    </script>
+</body>
+</html>

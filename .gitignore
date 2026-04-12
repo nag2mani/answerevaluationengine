@@ -201,6 +201,29 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Project specific
+# Runtime files
+.run.pid
+server.log
+*.pid
+
+# Temporary upload directory (contains user uploads)
+uploads/
+
+# Mac OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Hugging Face cache (can be very large with sentence-transformers)
+# Uncomment if you want to ignore all cached models:
+# ~/.cache/huggingface/
+# .cache/huggingface/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

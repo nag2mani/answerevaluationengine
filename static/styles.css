@@ -1,0 +1,14 @@
+/* Additional custom styles if needed beyond Tailwind */
+body {
+    font-feature-settings: "ss01";
+}
+
+.progress-ring {
+    transition: stroke-dashoffset 0.35s;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.score-glow {
+    text-shadow: 0 0 30px rgb(234 179 8);
+}
